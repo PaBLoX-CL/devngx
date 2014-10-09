@@ -14,9 +14,7 @@ if [[ "$#" -lt 2 ]]; then
 fi
 
 source _devngx-lib.sh
-source _variables.sh
 source _nginx-create.sh
-# source _php-fpm-pool-create.sh
 source _procfile-create.sh
 source _env-create.sh
 source _copy-stuff.sh
