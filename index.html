@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Devngx by PaBLoX-CL</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/PaBLoX-CL/devngx">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/PaBLoX-CL/devngx/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/PaBLoX-CL/devngx/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Devngx</h1>
+          <p>Dead simple and virginal development environment for GNU/Linux</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/PaBLoX-CL">PaBLoX-CL</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h3>
+<a name="whats-this-all-about" class="anchor" href="#whats-this-all-about"><span class="octicon octicon-link"></span></a>What's this all about?</h3>
+
+<p>This is a very simple set of bash scripts that automate a bit my workflow to setup local environments. As you can see, it's quite opinionated, and I basically use it </p>
+
+<h3>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h3>
+
+<ul>
+<li>
+<a href="https://github.com/ddollar/foreman" title="Foreman - Manage Procfile-based applications">foreman</a> </li>
+<li>A dns server (I recommend <code>dnsmasq</code>)</li>
+<li><code>nginx</code></li>
+<li><code>bash</code></li>
+<li><code>mktemp</code></li>
+</ul><h3>
+<a name="how-to" class="anchor" href="#how-to"><span class="octicon octicon-link"></span></a>How-to</h3>
+
+<h4>
+<a name="setup" class="anchor" href="#setup"><span class="octicon octicon-link"></span></a>Setup</h4>
+
+<p>Besides having First you have to make sure that your dns server catches all calls to <code>*.dev</code>. In the case of <code>dnsmasq</code>, it's enough adding:</p>
+
+<pre><code># /etc/dnsmasq.conf
+address=/dev/127.0.0.1
+</code></pre>
+
+<p>My nginx configuration is something like this:</p>
+
+<pre><code># /etc/nginx/nginx.conf
+http { 
+    …
+    include sites/enabled/*.conf;
+    …
+}
+
+$ tree /etc/nginx/sites
+/etc/nginx/sites
+├── available
+│   ├── pablox.conf
+│   └── resp.conf
+└── enabled
+    ├── pablox.conf -&gt; ../available/pablox.conf
+    └── resp.conf -&gt; ../available/resp.conf
+</code></pre>
+
+<h4>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h4>
+
+<pre><code>$ git clone https://github.com/PaBLoX-CL/devngx &amp;&amp; cd devng
+$ ./devngx rails-api ~/documentation/rails-api activate # the last argument is optional
+‘/tmp/pablo/tmp.lWY5EvdHDe/rails-api.nginx.conf’ -&gt; ‘/etc/nginx/sites/available/rails-api.conf’
+‘/etc/nginx/sites/enabled/rails-api.conf’ -&gt; ‘/etc/nginx/sites/available/rails-api.conf’
+‘/tmp/pablo/tmp.lWY5EvdHDe/rails-api.Procfile’ -&gt; ‘/home/pablo/Documents/rails-api/Procfile’
+‘/tmp/pablo/tmp.lWY5EvdHDe/rails-api.Procfile.dev’ -&gt; ‘/home/pablo/Documents/rails-api/Procfile.dev’
+‘/tmp/pablo/tmp.lWY5EvdHDe/rails-api.env’ -&gt; ‘/home/pablo/Documents/rails-api/.env’
+$ sudo nginx -s reload
+$ rm Procfile.dev # not needed
+</code></pre>
+
+<p>Now we need to make a modification (assuming you already have a rails application with the docs built... here it is <a href="http://patrickoscity.de/blog/offline-ruby-rails-documentation/">a pretty good article</a> on how to do it):</p>
+
+<pre><code>$ cat /etc/nginx/enabled/rails-api.dev
+server {
+  listen 80;
+  server_name rails-api.dev;
+
+  location / {
+    proxy_pass http://127.0.0.1:3003;
+  }
+}
+$ cat .env
+PORT=3003
+$ cat Procfile
+server: bundle exec rackup -p $PORT
+$ foreman start
+22:32:28 server.1 | started with pid 11692
+22:32:29 server.1 | [2014-10-08 22:32:29] INFO  WEBrick 1.3.1
+22:32:29 server.1 | [2014-10-08 22:32:29] INFO  ruby 2.1.2 (2014-05-08) [x86_64-linux]
+22:32:29 server.1 | [2014-10-08 22:32:29] INFO  WEBrick::HTTPServer#start: pid=11692 port=3003
+</code></pre>
+
+<p>Go to your browser, write <a href="http://rails-api.dev">http://rails-api.dev</a>, TADÁ!</p>
+
+<h3>
+<a name="gotchas" class="anchor" href="#gotchas"><span class="octicon octicon-link"></span></a>Gotchas</h3>
+
+<p>The method to keep count of which port we are using it's pretty basic:</p>
+
+<pre><code>$ cat ~/.config/devngx/conf
+port=3004
+</code></pre>
+
+<p>Stopping the app in the middle, could led to weird issues, specially if it's stopped before reaching the count is augmented (see <a href="https://github.com/PaBLoX-CL/devngx/blob/master/_fin.sh">_fin.sh</a>.</p>
+
+<h3>
+<a name="todo" class="anchor" href="#todo"><span class="octicon octicon-link"></span></a>TODO</h3>
+
+<ul>
+<li>To do</li>
+</ul><h3>
+<a name="problem" class="anchor" href="#problem"><span class="octicon octicon-link"></span></a>Problem?</h3>
+
+<p>Please, just <a href="https://github.com/PaBLoX-CL/devngx/issues">report a bug</a>. </p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
